@@ -83,8 +83,6 @@ class PostTest extends TestCase
 
     public function test_authenticated_user_can_create_post()
     {
-        $this->withoutMiddleware();
-
         $user = User::factory()->create();
 
         $postData = [
@@ -109,7 +107,6 @@ class PostTest extends TestCase
 
     public function test_only_author_can_update_post()
     {
-        $this->withoutMiddleware();
         $author = User::factory()->create();
         $otherUser = User::factory()->create();
 
@@ -124,8 +121,9 @@ class PostTest extends TestCase
             'published_at' => now()->addDay()->toDateTimeString(),
             'user_id' => $author->id,
         ];
+
         // Author update — should succeed
-        $response = $this->actingAs($author)
+        $this->actingAs($author)
             ->putJson("/posts/{$post->id}", $updateData)
             ->assertOk()
             ->assertJsonFragment(['title' => 'Updated Title']);
@@ -144,7 +142,6 @@ class PostTest extends TestCase
 
     public function test_only_author_can_delete_post()
     {
-        $this->withoutMiddleware();
         $author = User::factory()->create();
         $otherUser = User::factory()->create();
 

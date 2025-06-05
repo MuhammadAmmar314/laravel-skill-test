@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Post\StorePostRequest;
+use App\Http\Requests\Post\UpdatePostRequest;
 use App\Models\Post;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 
 class PostController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Display a listing of the resource.
      */
@@ -36,14 +40,9 @@ class PostController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StorePostRequest $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'is_draft' => 'boolean',
-            'published_at' => 'nullable|date|after_or_equal:now',
-        ]);
+        $validated = $request->validated();
 
         $post = Auth::user()->posts()->create($validated);
 
@@ -73,24 +72,13 @@ class PostController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdatePostRequest $request, Post $post)
     {
-        $post = Post::find($id);
         if (! $post) {
             abort(404, 'Post not found');
         }
-
-        if ($post->user_id != Auth::id()) {
-            abort(403, 'Unauthorized');
-        }
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'is_draft' => 'boolean',
-            'published_at' => 'nullable|date|after_or_equal:now',
-        ]);
-
+        $this->authorize('update', $post);
+        $validated = $request->validated();
         $post->update($validated);
 
         return response()->json($post);
@@ -99,12 +87,9 @@ class PostController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Post $post)
     {
-        $post = Post::find($id);
-        if ($post->user_id !== Auth::id()) {
-            abort(403, 'Unauthorized');
-        }
+        $this->authorize('delete', $post);
 
         $post->delete();
 
